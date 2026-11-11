@@ -1,0 +1,11 @@
+original_code,source_database,source_definition,canonical_class,role,mapping_tier,inclusion_status,mapping_rationale
+426783006,ptb_xl,Sinus rhythm,NSR,comparator,primary,included,Clinically equivalent normal sinus rhythm comparator (not treated as arrhythmia)
+426783006,cpsc_2018,Sinus rhythm,NSR,comparator,primary,included,Clinically equivalent normal sinus rhythm comparator
+426783006,chapman_shaoxing,Sinus rhythm,NSR,comparator,primary,included,Clinically equivalent normal sinus rhythm comparator
+164889003,ptb_xl,Atrial fibrillation,AF,arrhythmia,primary,included,Direct SNOMED-CT rhythm match across all candidate cohorts
+164889003,cpsc_2018,Atrial fibrillation,AF,arrhythmia,primary,included,Direct SNOMED-CT rhythm match across all candidate cohorts
+164889003,chapman_shaoxing,Atrial fibrillation,AF,arrhythmia,primary,included,Direct SNOMED-CT rhythm match across all candidate cohorts
+164890007,ptb_xl,Atrial flutter,AFL,arrhythmia,broad_sensitivity,masked_in_primary,Evaluated in broad mapping sensitivity analysis; masked if cohort support is below threshold
+427084000,ptb_xl,Sinus tachycardia,STACH,arrhythmia,primary,included,Compatible record-level rhythm diagnosis
+426177001,ptb_xl,Sinus bradycardia,SBRAD,arrhythmia,primary,included,Compatible record-level rhythm diagnosis
+270492004,cpsc_2018,First degree atrioventricular block,IAVB,conduction_rhythm,primary,included,Compatible conduction/rhythm category

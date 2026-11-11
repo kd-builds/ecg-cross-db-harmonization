@@ -1,0 +1,1205 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AETHER // Real-Time ECG Neural & Network Telemetry Deck</title>
+<script src="https://cdn.tailwindcss.com"></script>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&family=Inter:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --aether-bg: #0b0f19;
+    --aether-panel: #131b2d;
+    --aether-border: #263350;
+    --aether-accent: #22d3ee;
+    --aether-danger: #ef4444;
+    --aether-warning: #f59e0b;
+    --aether-ok: #10b981;
+    --aether-text: #e2e8f0;
+    --aether-muted: #94a3b8;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--aether-bg); color: var(--aether-text); font-family: 'Inter', system-ui, -apple-system, sans-serif; height: 100%; overflow: hidden; }
+  body { font-size: 13px; }
+  .mono { font-family: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace; }
+  .aether-panel { background: var(--aether-panel); border: 1px solid var(--aether-border); border-radius: 10px; }
+  .aether-input { background: #0f172a; border: 1px solid var(--aether-border); color: var(--aether-text); border-radius: 6px; padding: 4px 8px; }
+  .aether-input:focus { outline: none; border-color: var(--aether-accent); ring: 0 0 0 2px rgba(34,211,238,0.25); }
+  .btn { border: 1px solid var(--aether-border); background: #1c253a; color: var(--aether-text); border-radius: 6px; padding: 6px 12px; cursor: pointer; font-size: 12px; transition: all 0.15s; }
+  .btn:hover { background: #24314d; border-color: var(--aether-accent); }
+  .btn:active { transform: translateY(1px); }
+  .btn.primary { background: var(--aether-accent); color: #001a20; border-color: var(--aether-accent); }
+  .btn.primary:hover { background: #67e8f9; }
+  .btn.danger { background: rgba(239,68,68,0.2); border-color: var(--aether-danger); color: var(--aether-danger); }
+  .btn.danger:hover { background: rgba(239,68,68,0.35); }
+  .tab-btn { border-bottom: 2px solid transparent; color: var(--aether-muted); padding: 8px 16px; cursor: pointer; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; transition: all 0.2s; background: transparent; border-top: none; border-left: none; border-right: none; border-radius: 0; }
+  .tab-btn:hover { color: var(--aether-text); }
+  .tab-btn.active { color: var(--aether-accent); border-bottom-color: var(--aether-accent); }
+  .canvas-wrap { width: 100%; height: 100%; background: #060a12; border-radius: 8px; border: 1px solid var(--aether-border); position: relative; overflow: hidden; }
+  canvas { width: 100%; height: 100%; display: block; }
+  .badge { display: inline-flex; align-items: center; gap: 6px; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; }
+  .badge.nsr { background: rgba(16,185,129,0.15); color: var(--aether-ok); border: 1px solid rgba(16,185,129,0.35); }
+  .badge.af { background: rgba(239,68,68,0.15); color: var(--aether-danger); border: 1px solid rgba(239,68,68,0.35); }
+  .badge.stach { background: rgba(249,115,22,0.15); color: #f97316; border: 1px solid rgba(249,115,22,0.35); }
+  .badge.sbrad { background: rgba(59,130,246,0.15); color: #3b82f6; border: 1px solid rgba(59,130,246,0.35); }
+  .badge.iavb { background: rgba(168,85,247,0.15); color: #a855f7; border: 1px solid rgba(168,85,247,0.35); }
+  .badge.masked { background: rgba(245,158,11,0.18); color: var(--aether-warning); border: 1px solid rgba(245,158,11,0.4); }
+  .badge.demo { background: rgba(148,163,184,0.15); color: var(--aether-muted); border: 1px solid rgba(148,163,184,0.3); }
+  .badge.live { background: rgba(16,185,129,0.15); color: var(--aether-ok); border: 1px solid rgba(16,185,129,0.35); }
+  .prob-bar { height: 8px; background: #1e293b; border-radius: 4px; overflow: hidden; border: 1px solid var(--aether-border); }
+  .prob-fill { height: 100%; background: linear-gradient(90deg, var(--aether-accent), #818cf8); border-radius: 4px; width: 0%; transition: width 0.2s ease; }
+  .prob-masked { background: repeating-linear-gradient(45deg, rgba(245,158,11,0.2), rgba(245,158,11,0.2) 4px, transparent 4px, transparent 8px); }
+  .snap-log { font-family: 'JetBrains Mono', monospace; font-size: 11px; color: var(--aether-muted); max-height: 160px; overflow-y: auto; padding: 8px; background: #090c14; border-radius: 6px; border: 1px solid var(--aether-border); }
+  .snap-log .entry { margin: 3px 0; padding-bottom: 3px; border-bottom: 1px solid #1c253a; }
+  .snap-log .ts { color: var(--aether-muted); }
+  .snap-log .msg { color: var(--aether-text); margin-left: 6px; }
+  .node { cursor: pointer; transition: r 0.2s, fill 0.2s; }
+  .node:hover { r: 9; fill: var(--aether-accent); }
+  .node.active { fill: var(--aether-danger); stroke: #fff; stroke-width: 2; }
+  .relay-line { stroke: #334155; stroke-width: 1.5; opacity: 0.6; transition: opacity 0.3s, stroke 0.3s; }
+  .relay-line.active { stroke: var(--aether-accent); opacity: 1; stroke-width: 2.5; }
+  .cell { fill: var(--aether-accent); opacity: 0; }
+  .hidden-scroll::-webkit-scrollbar { width: 6px; }
+  .hidden-scroll::-webkit-scrollbar-track { background: #0f172a; }
+  .hidden-scroll::-webkit-scrollbar-thumb { background: #334155; border-radius: 3px; }
+  .grid-bg { stroke: #1e293b; stroke-width: 1; }
+  .grid-bg.major { stroke: #334155; stroke-width: 1.5; }
+  .trace { stroke: var(--aether-accent); stroke-width: 2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .saliency { fill: rgba(255, 60, 60, 0.45); pointer-events: none; }
+  .reduce-motion { transition: none !important; animation: none !important; }
+  @media (prefers-reduced-motion: reduce) { .reduce-motion, * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body class="h-screen flex flex-col text-sm">
+
+<!-- ===================== TOP RIBBON ===================== -->
+<header class="aether-panel border-b border-b aether-border px-4 py-2.5 flex flex-col gap-2 shrink-0">
+  <div class="flex items-center gap-3">
+    <div class="w-2 h-2 rounded-full bg-aether-ok animate-pulse" id="bridgeStatusDot"></div>
+    <span id="bridgeStatusText" class="mono text-xs text-aether-muted">DEMO MODE — bridge not detected</span>
+    <div class="ml-auto flex items-center gap-3 text-xs mono text-aether-muted">
+      <span>FPS: <span id="fpsReadout" class="text-aether-accent">—</span></span>
+      <span>|</span>
+      <span id="platformReadout">probing…</span>
+    </div>
+  </div>
+  <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 text-xs">
+    <div class="aether-panel p-2">
+      <div class="text-aether-muted text-[10px] uppercase tracking-wider mb-1">Logical CPU Threads</div>
+      <div class="flex items-baseline gap-1"><span id="cpuThreads" class="text-aether-accent font-bold">—</span><span class="text-aether-muted">threads</span></div>
+    </div>
+    <div class="aether-panel p-2">
+      <div class="text-aether-muted text-[10px] uppercase tracking-wider mb-1">WebGL2 GPU Renderer</div>
+      <div class="mono text-aether-muted truncate" id="gpuRenderer">probing…</div>
+    </div>
+    <div class="aether-panel p-2">
+      <div class="text-aether-muted text-[10px] uppercase tracking-wider mb-1">Active Rhythm / BPM</div>
+      <div class="flex items-baseline gap-2"><span id="rhythmBadge" class="badge nsr">NSR [Comparator]</span><span id="bpmReadout" class="text-aether-accent font-bold mono">—</span></div>
+    </div>
+    <div class="aether-panel p-2">
+      <div class="text-aether-muted text-[10px] uppercase tracking-wider mb-1">Cross-DB Macro-F1</div>
+      <div class="flex items-baseline gap-1"><span id="macroF1Readout" class="text-aether-accent font-bold">—</span><span id="bootstrapCI" class="text-aether-muted mono">[—, —]</span></div>
+    </div>
+  </div>
+  <div class="flex items-center justify-between gap-3 pt-1 border-t border-aether-border/50">
+    <div class="flex items-center gap-2 text-xs text-aether-muted">
+      <span>Cohort:</span>
+      <select id="cohortSelect" class="aether-input text-[11px] pl-2 pr-8 bg-[var(--aether-panel)]"></select>
+    </div>
+    <div class="flex items-center gap-2 text-xs text-aether-muted">
+      <span class="text-[10px] uppercase tracking-wider">Audio:</span>
+      <button id="audioToggle" class="btn" style="background:#1c253a">Muted</button>
+    </div>
+    <div class="flex items-center gap-2 text-xs text-aether-muted">
+      <span class="text-[10px] uppercase tracking-wider">Grad-CAM:</span>
+      <button id="gradcamToggle" class="btn" style="background:#1c253a">Off</button>
+    </div>
+  </div>
+</header>
+
+<main class="flex-1 overflow-hidden flex flex-col">
+  <!-- ===================== TAB NAV ===================== -->
+  <nav class="shrink-0 border-b border-aether-border bg-[#111827]/60 backdrop-blur">
+    <button class="tab-btn active" data-tab="oscilloscope" onclick="switchTab('oscilloscope')">Tab 1 — 12-Lead ECG Synthesizer & Grad-CAM Lab</button>
+    <button class="tab-btn" data-tab="onion" onclick="switchTab('onion')">Tab 2 — 6-Hop v3 Onion & Channel Topology</button>
+    <button class="tab-btn" data-tab="probe" onclick="switchTab('probe')">Tab 3 — Local Machine Probe & PowerShell Audit</button>
+  </nav>
+
+  <!-- ===================== TAB 1: OSCILLOSCOPE ===================== -->
+  <section id="tab-oscilloscope" class="tab-panel flex-1 flex flex-col overflow-hidden">
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden">
+      <!-- Canvas panel -->
+      <div class="flex-1 min-w-0 flex flex-col">
+        <div class="canvas-wrap flex-1 relative" id="canvasContainer">
+          <canvas id="ecgCanvas"></canvas>
+          <!-- Grad-CAM saliency overlay (SVG) -->
+          <svg id="saliencySvg" class="absolute inset-0 w-full h-full pointer-events-none" style="display:none;"></svg>
+          <!-- Freeze indicator -->
+          <div id="freezeOverlay" class="absolute inset-0 flex items-center justify-center pointer-events-none opacity-0 transition-opacity duration-300">
+            <div class="bg-black/80 border border-white/20 px-4 py-2 rounded text-aether-warning font-bold text-xs">FREEZE — click resume to continue</div>
+          </div>
+        </div>
+        <!-- Controls -->
+        <div class="aether-panel p-3 flex flex-wrap gap-4 items-end">
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-aether-muted">Rhythm</span>
+              <span id="rhythmLabel" class="text-aether-accent mono">NSR</span>
+            </div>
+            <div class="flex gap-1">
+              <button class="btn rhythm-sel flex-1" data-rhythm="NSR" onclick="setRhythm('NSR', this)">NSR</button>
+              <button class="btn rhythm-sel flex-1" data-rhythm="AF" onclick="setRhythm('AF', this)">AF</button>
+              <button class="btn rhythm-sel flex-1" data-rhythm="STACH" onclick="setRhythm('STACH', this)">STACH</button>
+              <button class="btn rhythm-sel flex-1" data-rhythm="SBRAD" onclick="setRhythm('SBRAD', this)">SBRAD</button>
+              <button class="btn rhythm-sel flex-1" data-rhythm="IAVB" onclick="setRhythm('IAVB', this)">IAVB</button>
+            </div>
+          </div>
+          <div class="flex flex-col gap-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="text-aether-muted">Noise: Baseline Wander + EMG</span>
+              <span id="noiseVal" class="text-aether-accent mono">15%</span>
+            </div>
+            <input type="range" id="noiseSlider" min="0" max="60" value="15" class="w-40 h-2 bg-aether-border rounded-lg appearance-none cursor-pointer accent-aether-accent">
+          </div>
+          <div class="flex flex-col gap-2">
+            <button id="freezeBtn" class="btn flex-1">Freeze Oscilloscope</button>
+            <button id="snapshotBtn" class="btn primary flex-1">Audit Snapshot</button>
+          </div>
+          <div class="flex flex-col gap-2 ml-auto">
+            <div class="text-[10px] text-aether-muted uppercase tracking-wider">Display Leads</div>
+            <div class="flex gap-1">
+              <button class="btn flex-1" onclick="setDisplayLeads(['I','II','V1','V5'])">4-Lead</button>
+              <button class="btn flex-1" onclick="setDisplayLeads(['I','II','III','aVR','aVL','aVF','V1','V2','V3','V4','V5','V6'])">12-Lead</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Posterior panel -->
+      <div class="w-full lg:w-80 border-l border-aether-border bg-[#111827]/40 p-4 flex flex-col gap-4 overflow-y-auto hidden-scroll">
+        <div class="text-xs font-bold text-aether-accent uppercase tracking-wider mb-2">Harmonized Crosswalk Posterior</div>
+        <div class="space-y-3" id="posteriorPanel">
+          <!-- populated by JS -->
+        </div>
+        <div class="mt-2 pt-2 border-t border-aether-border/50">
+          <div class="text-[10px] text-aether-muted uppercase tracking-wider mb-1">Live 95% Patient-Cluster Bootstrap CI</div>
+          <div class="flex items-baseline gap-1">
+            <span id="ciLower" class="text-aether-accent mono font-bold">—</span>
+            <span class="text-aether-muted">to</span>
+            <span id="ciUpper" class="text-aether-accent mono font-bold">—</span>
+          </div>
+          <div class="text-[10px] text-aether-muted mt-1">Macro-F1 shared-set; masked classes excluded from average</div>
+        </div>
+        <div class="mt-3 p-2 bg-[#0f172a] border border-aether-border rounded text-[10px] text-aether-muted">
+          <div class="flex items-center gap-2 mb-1"><span class="badge masked">MASKED</span> eval_mask = 0 — missing diagnosis ≠ confirmed negative</div>
+          <div>AFL (164890007) masked in primary tier on cohorts without annotation support.</div>
+        </div>
+        <div class="mt-2">
+          <div class="text-[10px] text-aether-muted uppercase tracking-wider mb-1">Audit Snapshot Log</div>
+          <div id="snapLog" class="snap-log"><div class="entry"><span class="ts">—</span><span class="msg">Deck initialized in demo mode.</span></div></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB 2: ONION TOPOLOGY ===================== -->
+  <section id="tab-onion" class="tab-panel hidden flex-1 flex flex-col overflow-hidden">
+    <div class="flex-1 min-w-0 flex flex-col lg:flex-row overflow-hidden">
+      <div class="flex-1 flex flex-col">
+        <div class="canvas-wrap flex-1 relative">
+          <svg id="onionSvg" class="w-full h-full" viewBox="0 0 800 500" preserveAspectRatio="xMidYMid meet"></svg>
+          <div id="onionHint" class="absolute bottom-4 left-4 bg-black/70 border border-aether-border/50 px-3 py-2 rounded text-xs text-aether-muted pointer-events-none">
+            Click a node → Relay Cryptographic Inspector
+          </div>
+        </div>
+        <div class="aether-panel p-3 flex flex-wrap gap-3 items-center">
+          <button class="btn primary" onclick="sendOnionPacket()">Send 6-Hop Encrypted Packet</button>
+          <button class="btn" onclick="rotateGuardCircuit()">Rotate Guard & HSDir Circuit</button>
+          <div class="ml-auto flex items-center gap-2 text-xs text-aether-muted">
+            <span id="circuitId" class="mono">circuit: —</span>
+          </div>
+        </div>
+      </div>
+      <div class="w-full lg:w-96 border-l border-aether-border bg-[#111827]/40 p-4 flex flex-col overflow-y-auto hidden-scroll">
+        <div class="text-xs font-bold text-aether-accent uppercase tracking-wider mb-2">Relay Cryptographic Inspector</div>
+        <div id="relayInspector" class="space-y-3">
+          <div class="text-center py-4 text-aether-muted text-xs">Select a relay node on the mesh to inspect its cryptographic descriptor.</div>
+        </div>
+      </div>
+    </div>
+    <div class="border-t border-aether-border bg-[#0f172a] p-3 flex flex-col gap-2">
+      <div class="text-[10px] text-aether-muted uppercase tracking-wider">Packet Trace Log</div>
+      <div id="onionTraceLog" class="snap-log" style="max-height:120px;"></div>
+    </div>
+  </section>
+
+  <!-- ===================== TAB 3: MACHINE PROBE ===================== -->
+  <section id="tab-probe" class="tab-panel hidden flex-1 flex flex-col overflow-hidden">
+    <div class="p-4 grid grid-cols-1 lg:grid-cols-2 gap-4">
+      <div class="aether-panel p-4 flex flex-col gap-3">
+        <div class="text-xs font-bold text-aether-accent uppercase tracking-wider">Live Browser & Host Benchmark</div>
+        <div class="space-y-2 text-xs" id="probeBench">
+          <!-- populated by JS -->
+        </div>
+        <div class="mt-2 pt-2 border-t border-aether-border/50">
+          <button class="btn w-full" onclick="runCpuStressTest()">Run CPU Stress Test (2.5M FP ops)</button>
+          <div id="stressResult" class="mt-2 text-xs mono text-aether-muted"></div>
+        </div>
+      </div>
+      <div class="aether-panel p-4 flex flex-col gap-3">
+        <div class="text-xs font-bold text-aether-accent uppercase tracking-wider">Windows PowerShell Hardware & Network Audit</div>
+        <div class="text-xs text-aether-muted mb-2">Read-only one-liner: Get-CimInstance Win32_Processor / Win32_OperatingSystem / Get-NetTCPConnection -State Established</div>
+        <div class="flex gap-2">
+          <button class="btn primary flex-1" onclick="copyPsAudit()">Copy to Clipboard</button>
+          <button class="btn flex-1" onclick="appendSnapshotFromAudit()">Append to Snapshot Log</button>
+        </div>
+        <div id="psOneLiner" class="mt-2 p-2 bg-black/40 border border-aether-border/30 rounded mono text-[10px] text-a-muted overflow-x-auto">Get-CimInstance Win32_Processor | Select Name, NumberOfLogicalProcessors; Get-CimInstance Win32_OperatingSystem | Select Caption, Version, TotalVisibleMemorySize; Get-NetTCPConnection -State Established | Select LocalAddress, LocalPort, RemoteAddress, RemotePort, OwningProcess</div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ===================== STATE ===================== */
+const CFG = {
+  sampleRate: 500,
+  windowSec: 10,
+  leads: ["I","II","III","aVR","aVL","aVF","V1","V2","V3","V4","V5","V6"],
+  displayLeads: ["I","II","V1","V5"],
+  gridSpeed: 25,   // mm/s
+  gridGain: 10,    // mm/mV
+};
+const STATE = {
+  rhythm: "NSR",
+  bpm: 72,
+  noisePct: 15,
+  displayLeads: ["I","II","V1","V5"],
+  frozen: false,
+  audioEnabled: false,
+  gradCamEnabled: false,
+  bridgeConnected: false,
+  ws: null,
+  cohort: "ptb_xl_within",
+  canvasWidth: 0,
+  canvasHeight: 0,
+  t: 0,                 // sim time seconds
+  lastRender: 0,
+  rafId: null,
+  fps: null,
+  rrIntervalSec: 60/72,
+  nextRrBeatTime: 0,
+  prIntervalSec: 0.16,  // NSR normal PR
+  audioCtx: null,
+  oscillatorNodes: [],
+  gainNode: null,
+  saliencyBands: [],    // {startSec, endSec, leadIdx, intensity}
+  posterior: {
+    NSR: {p: 0.0, mask: 1},
+    AF:  {p: 0.0, mask: 1},
+    STACH:{p: 0.0, mask: 1},
+    SBRAD:{p: 0.0, mask: 1},
+    IAVB:{p: 0.0, mask: 1}
+  },
+  macroF1: null,
+  ci: [null, null],
+  circuitId: null,
+  nodes: [],      // onion topology nodes
+  activeNode: null,
+};
+
+const RHYTHM_META = {
+  NSR: { bpm: 72, label: "NSR [Comparator]", snomed: "426783006", class: "nsr", desc: "Regular sinus rhythm, upright P-wave, normal PR" },
+  AF:  { bpm: 118, label: "AF — Atrial Fibrillation", snomed: "164889003", class: "af", desc: "Absent P-waves, chaotic f-waves, irregular R-R" },
+  STACH:{ bpm: 132, label: "STACH — Sinus Tachycardia", snomed: "427084000", class: "stach", desc: "Accelerated regular sinus rhythm" },
+  SBRAD:{ bpm: 46, label: "SBRAD — Sinus Bradycardia", snomed: "426177001", class: "sbrad", desc: "Slow sinus rhythm" },
+  IAVB:{ bpm: 68, label: "IAVB — 1° AV Block", snomed: "270492004", class: "iavb", desc: "Prolonged PR interval shift" },
+};
+
+const CANONICAL_CLASSES = ["NSR","AF","STACH","SBRAD","IAVB"];
+
+/* ===================== DOM REFS ===================== */
+const $ = id => document.getElementById(id);
+const ecgCanvas = $("ecgCanvas");
+const ctx = ecgCanvas.getContext("2d");
+const saliencySvg = $("saliencySvg");
+const onionSvg = $("onionSvg");
+const freezeOverlay = $("freezeOverlay");
+
+/* ===================== DSP: ECG SYNTHESIS ===================== */
+// Gaussian
+function gaussian(x, mu, sigma, amp){ return amp * Math.exp(-0.5 * Math.pow((x-mu)/sigma, 2)); }
+// Gaussian derivative (QRS-like sharp biphasic spike)
+function gaussDeriv(x, mu, sigma, amp){ return amp * ((x-mu)/(sigma*sigma)) * Math.exp(-0.5 * Math.pow((x-mu)/sigma, 2)); }
+// Asymmetric Gaussian (T-wave)
+function asymGauss(x, mu, sigmaL, sigmaR, amp){
+  const s = x < mu ? sigmaL : sigmaR;
+  return amp * Math.exp(-0.5 * Math.pow((x-mu)/s, 2));
+}
+// Procedural fallback: clean analytical P-QRS-T waveform (with AF f-wave fibrillation).
+// Used when the cached synthesis buffer yields no finite in-window samples.
+function fallbackLeadII(durSec, sampleRate, rhythm, noisePct, tOffset){
+  const N = Math.floor(durSec * sampleRate);
+  const sig = new Float32Array(N);
+  const meta = RHYTHM_META[rhythm] || RHYTHM_META.NSR;
+  const bpm = meta.bpm;
+  const rrSec = 60 / bpm;
+  const prSec = rhythm === "IAVB" ? 0.28 : 0.16;
+  let beatTime = (Math.floor(tOffset / rrSec) * rrSec) - rrSec;
+  while(beatTime < durSec + rrSec){
+    let thisRr = rrSec;
+    if(rhythm === "AF") thisRr = rrSec * (0.75 + 0.5 * Math.random());
+    const pOnset = beatTime - prSec + 0.02;
+    const qrsC = beatTime;
+    const tOnset = beatTime + 0.30;
+    if(rhythm !== "AF"){
+      for(let i=0;i<N;i++){ const x = i/sampleRate - pOnset; if(Math.abs(x) < 3*0.04) sig[i] += gaussian(x, 0, 0.04, 0.12); }
+    }
+    for(let i=0;i<N;i++){ const x = i/sampleRate - qrsC; if(Math.abs(x) < 3*0.012){ sig[i] += gaussDeriv(x, 0, 0.012, 1.6*0.6); sig[i] += gaussDeriv(x, 0, 0.006, 1.6); } }
+    for(let i=0;i<N;i++){ const x = i/sampleRate - tOnset; if(Math.abs(x) < 3*Math.max(0.09,0.14)) sig[i] += asymGauss(x, 0, 0.09, 0.14, 0.25); }
+    beatTime += thisRr;
+  }
+  const bwFreqs = [0.1,0.3,0.5];
+  for(let i=0;i<N;i++){ const ti = i/sampleRate; let wander = 0; bwFreqs.forEach(f=>{ wander += 0.06*Math.sin(2*Math.PI*f*ti + Math.random()*6.28); }); sig[i] += wander*(noisePct/100); }
+  let prev = 0;
+  for(let i=0;i<N;i++){ const w = (Math.random()*2-1); const emg = w - prev; prev = w*0.3; sig[i] += emg*0.05*(noisePct/100); }
+  return sig;
+}
+// Rolling synthesis cache: synthesize one window at a time (at wrap boundaries)
+// instead of re-synthesizing the full 10 s window every animation frame.
+const SYNTH_CACHE = {};
+function getSynthLeadII(rhythm, noisePct, tOffset){
+  const winSec = CFG.windowSec;
+  const sr = CFG.sampleRate;
+  const N = Math.floor(winSec * sr);
+  const cacheKey = rhythm + "_" + noisePct;
+  const cache = SYNTH_CACHE[cacheKey];
+  const covered = cache && cache.rhythm === rhythm && cache.noisePct === noisePct
+              && cache.startT <= tOffset && (tOffset - cache.startT) * sr + N <= cache.buf.length;
+  if(covered){
+    const off = Math.floor((tOffset - cache.startT) * sr);
+    const out = new Float32Array(N);
+    out.set(cache.buf.subarray(off, off + N));
+    return out;
+  }
+  const sig = synthesizeLeadII(winSec, sr, rhythm, noisePct, tOffset);
+  SYNTH_CACHE[cacheKey] = { key: cacheKey, startT: tOffset, rhythm, noisePct, buf: sig, ns: sig.length };
+  return sig;
+}
+
+function synthesizeLeadII(durSec, sampleRate, rhythm, noisePct, tOffset){
+  const N = Math.floor(durSec * sampleRate);
+  const sig = new Float32Array(N);
+  const meta = RHYTHM_META[rhythm];
+  const bpm = meta.bpm;
+  const rrSec = 60 / bpm;
+  const prSec = rhythm === "IAVB" ? 0.28 : 0.16;   // prolonged PR for IAVB
+  const pAmp = 0.12;   // mV
+  const qrsAmp = 1.6;  // mV
+  const tAmp = 0.25;   // mV
+  const pSigma = 0.04; // s
+  const qrsSigma = 0.012;
+  const tSigmaL = 0.09, tSigmaR = 0.14;
+
+  // generate beats across the window
+  let beatTime = ((Math.floor(tOffset / rrSec) * rrSec) - rrSec); // start a beat before window
+  while (beatTime < durSec + rrSec) {
+    // jitter for AF / irregular
+    let thisRr = rrSec;
+    if (rhythm === "AF") thisRr = rrSec * (0.75 + 0.5 * Math.random()); // chaotic irregular
+    const pOnset = beatTime - prSec + 0.02;   // P wave before QRS
+    const qrsC = beatTime;
+    const tOnset = beatTime + 0.30;
+
+    // P-wave (absent in AF)
+    if (rhythm !== "AF") {
+      for (let i = 0; i < N; i++) {
+        const x = i / sampleRate - pOnset;
+        if (Math.abs(x) < 3*pSigma) sig[i] += gaussian(x, 0, pSigma, pAmp);
+      }
+    }
+    // QRS
+    for (let i = 0; i < N; i++) {
+      const x = i / sampleRate - qrsC;
+      if (Math.abs(x) < 3*qrsSigma) {
+        sig[i] += gaussDeriv(x, 0, qrsSigma, qrsAmp*0.6);   // negative deflection
+        sig[i] += gaussDeriv(x, 0, qrsSigma*0.5, qrsAmp);   // main spike
+      }
+    }
+    // T-wave
+    for (let i = 0; i < N; i++) {
+      const x = i / sampleRate - tOnset;
+      if (Math.abs(x) < 3*Math.max(tSigmaL,tSigmaR)) sig[i] += asymGauss(x, 0, tSigmaL, tSigmaR, tAmp);
+    }
+    beatTime += thisRr;
+  }
+
+  // baseline wander (sum of low-freq sinusoids)
+  const bwFreqs = [0.1, 0.3, 0.5];
+  for (let i = 0; i < N; i++) {
+    const ti = i / sampleRate;
+    let wander = 0;
+    bwFreqs.forEach(f => { wander += 0.06 * Math.sin(2*Math.PI*f*ti + Math.random()*6.28); });
+    sig[i] += wander * (noisePct/100);
+  }
+
+  // EMG noise: band-passed-ish white noise (simple: high-pass filtered white via difference)
+  let prev = 0;
+  for (let i = 0; i < N; i++) {
+    const w = (Math.random()*2 - 1);
+    const emg = w - prev;      // crude high-pass
+    prev = w * 0.3;
+    sig[i] += emg * 0.05 * (noisePct/100);
+  }
+
+  return sig;
+}
+
+// Derive other leads from Lead II via lead-vector projection (Einthoven / Wilson)
+// Returns map leadIdx -> Float32Array
+function synthesizeAllLeads(leadII, durSec, sampleRate){
+  const N = leadII.length;
+  const leads = {};
+  // Lead I ~ 0.5 * LeadII (simplified frontal plane projection)
+  leads[0] = new Float32Array(leadII); // I (approx)
+  for(let i=0;i<N;i++) leads[0][i] = leadII[i] * 0.55 + (Math.random()-0.5)*0.02;
+  leads[1] = new Float32Array(leadII); // II
+  leads[2] = new Float32Array(leadII); // III ~ II - I
+  for(let i=0;i<N;i++) leads[2][i] = leadII[i] * 0.45 - leads[0][i] * 0.1 + (Math.random()-0.5)*0.02;
+  // augmented leads (scaled)
+  [3,4,5].forEach(j => {
+    leads[j] = new Float32Array(leadII);
+    for(let i=0;i<N;i++) leads[j][i] = leadII[i] * (0.3 + 0.1*j) + (Math.random()-0.5)*0.03;
+  });
+  // precordial V1-V6 (different morphology amplitude)
+  [6,7,8,9,10,11].forEach((j,k) => {
+    leads[j] = new Float32Array(leadII);
+    const vAmp = 0.9 + 0.12*k;   // V1 small -> V6 larger
+    for(let i=0;i<N;i++) leads[j][i] = leadII[i] * (vAmp/1.6) + (Math.random()-0.5)*0.04;
+  });
+  return leads;
+}
+
+/* ===================== RENDER LOOP ===================== */
+function startRenderLoop(){
+  if(STATE.rafId !== null) return;
+  STATE.rafId = requestAnimationFrame(renderFrame);
+}
+function resizeCanvas(){
+  const container = $("canvasContainer");
+  const dpr = Math.max(1, Math.min(window.devicePixelRatio || 1, 2));
+  const w = container.clientWidth || 300;
+  const h = container.clientHeight || 150;
+  const pw = Math.round(w * dpr), ph = Math.round(h * dpr);
+  if(ecgCanvas.width !== pw || ecgCanvas.height !== ph){
+    ecgCanvas.width = pw;
+    ecgCanvas.height = ph;
+  }
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  STATE.canvasWidth = w;
+  STATE.canvasHeight = h;
+  STATE.t = 0;
+  drawGrid();
+}
+window.addEventListener("resize", resizeCanvas);
+
+// Clinical grid: 25 mm/s -> 1 large box = 5mm = 0.2s ; 10 mm/mV -> 1mV = 10mm
+// Pixel scale derived from canvas size
+function drawGrid(){
+  const w = STATE.canvasWidth, h = STATE.canvasHeight;
+  ctx.clearRect(0,0,w,h);
+  // determine pixels per second and per mV based on a 10s window fitting width
+  // 1 large box = 0.2 s; we want ~5 large boxes across => 1s ~ (w/10) px
+  const pxPerSec = w / CFG.windowSec;
+  const pxPerMv = (h / 4) / 2;   // roughly 2 mV span over half height
+  ctx.lineWidth = 1;
+  // vertical grid lines every 0.2 s (large box)
+  ctx.strokeStyle = "#1e293b";
+  for(let x = 0; x <= w; x += pxPerSec * 0.2){
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
+  }
+  // minor vertical every 0.04 s (small box 1mm)
+  ctx.strokeStyle = "#0f172a";
+  ctx.lineWidth = 0.5;
+  for(let x = 0; x <= w; x += pxPerSec * 0.04){
+    ctx.beginPath(); ctx.moveTo(x,0); ctx.lineTo(x,h); ctx.stroke();
+  }
+  // horizontal: 1 mV lines
+  const midY = h/2;
+  ctx.strokeStyle = "#1e293b"; ctx.lineWidth = 1;
+  for(let mv = -2; mv <= 2; mv += 0.5){
+    const y = midY - mv * pxPerMv;
+    ctx.beginPath(); ctx.moveTo(0,y); ctx.lineTo(w,y); ctx.stroke();
+  }
+  // center line (0 mV)
+  ctx.strokeStyle = "#334155"; ctx.lineWidth = 1.5;
+  ctx.beginPath(); ctx.moveTo(0,midY); ctx.lineTo(w,midY); ctx.stroke();
+}
+
+function renderFrame(now){
+  if(!STATE.lastRender) STATE.lastRender = now;
+  const dt = (now - STATE.lastRender) / 1000;
+  STATE.lastRender = now;
+  if(STATE.rafId !== null){
+    STATE.fps = (STATE.fps === null) ? 60.0 : (STATE.fps * 0.9 + (1 / Math.max(dt, 1e-4)) * 0.1);
+    $("fpsReadout").textContent = String(Math.round(STATE.fps));
+  }
+  if(!STATE.frozen){
+    STATE.t += dt;
+    if(STATE.t > CFG.windowSec) STATE.t = 0;
+  }
+  const w = STATE.canvasWidth, h = STATE.canvasHeight;
+  const midY = h/2;
+  const pxPerSec = w / CFG.windowSec;
+  const pxPerMv = (h/4)/2;
+
+  ctx.clearRect(0,0,w,h);
+  drawGrid();
+
+  const sampleRate = CFG.sampleRate;
+  const durSec = CFG.windowSec;
+  // render from t to t+windowSec across width: x = (sec - t) * pxPerSec
+  const leadII = getSynthLeadII(STATE.rhythm, STATE.noisePct, STATE.t);
+  const allLeads = synthesizeAllLeads(leadII, durSec, sampleRate);
+
+  // update BPM readout
+  $("bpmReadout").textContent = STATE.bpm.toFixed(0);
+
+  // draw each display lead offset vertically
+  const leadH = h / STATE.displayLeads.length;
+  STATE.displayLeads.forEach((leadName, li)=>{
+    const leadIdx = CFG.leads.indexOf(leadName);
+    const baseY = midY - (STATE.displayLeads.length/2 - li - 0.5) * leadH;
+    const leadPxPerMv = (leadH * 0.75) / 2;   // 2 mV span within lead band
+    // collect finite in-window samples
+    const pts = [];
+    const sig = allLeads[leadIdx];
+    if(sig){
+      for(let i=0;i<sig.length;i++){
+        const sec = i / sampleRate;
+        if(sec < STATE.t || sec > STATE.t + CFG.windowSec) continue;
+        const y = baseY - sig[i] * leadPxPerMv;
+        if(!Number.isFinite(y)) continue;
+        pts.push({ x: (sec - STATE.t) * pxPerSec, y: y });
+      }
+    }
+    let ptsEff = pts;
+    if(ptsEff.length < 2){
+      // procedural fallback: clean analytical P-QRS-T wave (with AF f-wave fibrillation)
+      ptsEff = [];
+      const fb = fallbackLeadII(CFG.windowSec, sampleRate, STATE.rhythm, STATE.noisePct, STATE.t);
+      for(let i=0;i<fb.length;i++){
+        const sec = i / sampleRate;
+        if(sec < STATE.t || sec > STATE.t + CFG.windowSec) continue;
+        const y = baseY - fb[i] * leadPxPerMv;
+        if(!Number.isFinite(y)) continue;
+        ptsEff.push({ x: (sec - STATE.t) * pxPerSec, y: y });
+      }
+    }
+    if(ptsEff.length > 0){
+      const stroke = li===1 ? "#34d399" : "#38bdf8";
+      ctx.beginPath();
+      ctx.strokeStyle = stroke;
+      ctx.lineWidth = 2.2;
+      ctx.shadowColor = stroke;
+      ctx.shadowBlur = 6;
+      ctx.moveTo(ptsEff[0].x, ptsEff[0].y);
+      for(let k=1;k<ptsEff.length;k++) ctx.lineTo(ptsEff[k].x, ptsEff[k].y);
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+    // lead label top-left of lane
+    ctx.fillStyle = li===1 ? "#34d399" : "#38bdf8";
+    ctx.font = "10px 'JetBrains Mono'";
+    ctx.fillText(leadName, 8, baseY - leadH*0.35 + 8);
+  });
+
+  // draw saliency bands (Grad-CAM)
+  drawSaliencyBands(w, h, pxPerSec, STATE.t);
+
+  // advance heartbeat & audio trigger
+  if(!STATE.frozen){
+    const rrSec = 60 / STATE.bpm;
+    if(STATE.t >= STATE.nextRrBeatTime){
+      STATE.nextRrBeatTime += rrSec;
+      triggerQrsPip();
+    }
+    // re-arm next beat scheduling when the rolling window wraps
+    if(STATE.t >= CFG.windowSec){ STATE.t = 0; STATE.nextRrBeatTime = rrSec; }
+  }
+
+  STATE.rafId = requestAnimationFrame(renderFrame);
+}
+
+function drawSaliencyBands(w, h, pxPerSec, t){
+  const midY = h/2;
+  const leadH = h / STATE.displayLeads.length;
+  // clear svg
+  saliencySvg.innerHTML = "";
+  if(!STATE.gradCamEnabled || STATE.saliencyBands.length===0) return;
+  saliencySvg.style.display = "block";
+  const ns = "http://www.w3.org/2000/svg";
+  STATE.saliencyBands.forEach(b=>{
+    const startSec = (b.start_sec !== undefined) ? b.start_sec : b.t;
+    const endSec = (b.end_sec !== undefined) ? b.end_sec : (b.t + (b.dur || 0.06));
+    if(startSec < t || startSec > t + CFG.windowSec) return;
+    const x = (startSec - t) * pxPerSec;
+    const width = Math.max(0.02, (endSec - startSec)) * pxPerSec;
+    const leadName = b.lead || STATE.displayLeads[1] || "II";
+    const li = STATE.displayLeads.indexOf(leadName);
+    if(li<0) return;
+    const baseY = midY - (STATE.displayLeads.length/2 - li - 0.5) * leadH;
+    const rect = document.createElementNS(ns,"rect");
+    rect.setAttribute("x", Math.max(0,x));
+    rect.setAttribute("y", baseY - leadH*0.4);
+    rect.setAttribute("width", Math.min(width, w - Math.max(0,x)));
+    rect.setAttribute("height", leadH*0.8);
+    rect.setAttribute("fill", b.color || "rgba(255,60,60,0.45)");
+    rect.setAttribute("class","saliency");
+    saliencySvg.appendChild(rect);
+  });
+}
+
+/* ===================== AUDIO (Web Audio API) ===================== */
+function initAudio(){
+  if(STATE.audioCtx) return;
+  const ACtx = window.AudioContext || window.webkitAudioContext;
+  STATE.audioCtx = new ACtx();
+  STATE.gainNode = STATE.audioCtx.createGain();
+  STATE.gainNode.connect(STATE.audioCtx.destination);
+  STATE.gainNode.gain.value = STATE.audioEnabled ? 0.3 : 0;
+}
+function resumeAudio(){
+  if(STATE.audioCtx && STATE.audioCtx.state === "suspended") STATE.audioCtx.resume();
+}
+function setAudioEnabled(on){
+  STATE.audioEnabled = on;
+  $("audioToggle").textContent = on ? "LIVE" : "Muted";
+  $("audioToggle").className = on ? "btn primary" : "btn";
+  if(STATE.gainNode) STATE.gainNode.gain.value = on ? 0.25 : 0;
+  if(on) resumeAudio();
+}
+function triggerQrsPip(){
+  if(!STATE.audioEnabled || !STATE.audioCtx) return;
+  resumeAudio();
+  const now = STATE.audioCtx.currentTime;
+  const osc = STATE.audioCtx.createOscillator();
+  const g = STATE.audioCtx.createGain();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(1000, now);
+  g.gain.setValueAtTime(0.12, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+  osc.connect(g); g.connect(STATE.audioCtx.destination);
+  osc.start(now); osc.stop(now + 0.08);
+  // AF f-wave hum
+  if(STATE.rhythm === "AF"){
+    const o2 = STATE.audioCtx.createOscillator();
+    const g2 = STATE.audioCtx.createGain();
+    o2.type = "triangle";
+    o2.frequency.setValueAtTime(5.5 + Math.random()*1.2, now);
+    g2.gain.setValueAtTime(0.04, now);
+    g2.gain.linearRampToValueAtTime(0, now + 0.3);
+    o2.connect(g2); g2.connect(STATE.audioCtx.destination);
+    o2.start(now); o2.stop(now + 0.3);
+  }
+}
+function playConfirmationTone(freq=880, dur=0.1){
+  if(!STATE.audioEnabled || !STATE.audioCtx) return;
+  resumeAudio();
+  const now = STATE.audioCtx.currentTime;
+  const osc = STATE.audioCtx.createOscillator();
+  const g = STATE.audioCtx.createGain();
+  osc.type = "sine";
+  osc.frequency.setValueAtTime(freq, now);
+  g.gain.setValueAtTime(0.1, now);
+  g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+  osc.connect(g); g.connect(STATE.audioCtx.destination);
+  osc.start(now); osc.stop(now + dur);
+}
+
+/* ===================== RHYTHM / CONTROLS ===================== */
+function setRhythm(rhythm, btnEl){
+  STATE.rhythm = rhythm;
+  STATE.bpm = RHYTHM_META[rhythm].bpm;
+  STATE.nextRrBeatTime = STATE.t + 0.5;
+  $("rhythmLabel").textContent = rhythm;
+  $("rhythmBadge").textContent = RHYTHM_META[rhythm].label;
+  $("rhythmBadge").className = "badge " + RHYTHM_META[rhythm].class;
+  document.querySelectorAll(".rhythm-sel").forEach(b=>{ b.className = "btn rhythm-sel flex-1" + (b.dataset.rhythm===rhythm ? " primary" : ""); });
+  // update posterior to reflect rhythm emphasis
+  updatePosteriorFromRhythm();
+  playConfirmationTone(880, 0.08);
+}
+function updatePosteriorFromRhythm(){
+  // strong prior for active rhythm, small noise for others
+  CANONICAL_CLASSES.forEach(c=>{
+    const isActive = c === STATE.rhythm;
+    STATE.posterior[c].p = isActive ? (0.75 + Math.random()*0.15) : (Math.random()*0.1);
+  });
+  normalizePosterior();
+  renderPosterior();
+}
+function normalizePosterior(){
+  const sum = CANONICAL_CLASSES.reduce((s,c)=>s+STATE.posterior[c].p,0);
+  CANONICAL_CLASSES.forEach(c=>{ STATE.posterior[c].p /= sum; });
+}
+function setNoisePct(v){
+  STATE.noisePct = parseInt(v);
+  $("noiseVal").textContent = STATE.noisePct + "%";
+}
+function toggleFreeze(){
+  STATE.frozen = !STATE.frozen;
+  $("freezeBtn").textContent = STATE.frozen ? "Resume Oscilloscope" : "Freeze Oscilloscope";
+  $("freezeOverlay").style.opacity = STATE.frozen ? 1 : 0;
+  playConfirmationTone(STATE.frozen ? 600 : 900, 0.1);
+}
+function setDisplayLeads(leads){
+  STATE.displayLeads = leads;
+  $("ecgCanvas").width = $("ecgCanvas").width; // clear
+  resizeCanvas();
+}
+
+/* ===================== POSTERIOR PANEL ===================== */
+function renderPosterior(){
+  const panel = $("posteriorPanel");
+  panel.innerHTML = "";
+  CANONICAL_CLASSES.forEach(c=>{
+    const p = STATE.posterior[c];
+    const pct = Math.round(p.p * 100);
+    const maskClass = p.mask === 0 ? "prob-masked" : "";
+    const maskBadge = p.mask === 0 ? '<span class="badge masked ml-2">MASKED</span>' : '';
+    const div = document.createElement("div");
+    div.className = "flex items-center gap-2";
+    div.innerHTML = `
+      <div class="w-16 text-[10px] mono font-bold">${c}</div>
+      <div class="flex-1"><div class="prob-bar"><div class="prob-fill ${maskClass}" style="width:${pct}%"></div></div></div>
+      <div class="w-12 text-[10px] mono text-right">${pct}%</div>${maskBadge}
+    `;
+    panel.appendChild(div);
+  });
+  // CI + macro f1
+  $("macroF1Readout").textContent = STATE.macroF1 !== null ? STATE.macroF1.toFixed(3) : "—";
+  $("ciLower").textContent = STATE.ci[0] !== null ? STATE.ci[0].toFixed(3) : "—";
+  $("ciUpper").textContent = STATE.ci[1] !== null ? STATE.ci[1].toFixed(3) : "—";
+  $("bootstrapCI").textContent = STATE.ci[0] !== null ? `[${STATE.ci[0].toFixed(3)}, ${STATE.ci[1].toFixed(3)}]` : "[—, —]";
+}
+function cohortMaskedClasses(cohortId){
+  // eval_mask semantics (src/ecg_xval/harmonization/crosswalk.py): 1 = evaluable, 0 = masked
+  // Derived from configs/crosswalk/label_crosswalk_v1.csv (primary tier, included) + eligibility rules.
+  const maskedByCohort = {
+    ptb_xl_within: ["AFL","IAVB"],
+    cpsc_2018_external: ["AFL","STACH","SBRAD"],
+    chapman_shaoxing_external: ["AFL","STACH","SBRAD","IAVB"],
+    lopgo_ensemble: ["AFL"],
+  };
+  const masked = maskedByCohort[cohortId] || maskedByCohort.ptb_xl_within;
+  return masked;
+}
+function applyCohortMasks(maskedArr){
+  CANONICAL_CLASSES.forEach(c=>{ STATE.posterior[c].mask = maskedArr.includes(c) ? 0 : 1; });
+}
+function setCohortMasks(){
+  // apply mask rules from the versioned label crosswalk for the selected cohort
+  applyCohortMasks(cohortMaskedClasses(STATE.cohort));
+  renderPosterior();
+}
+
+/* ===================== AUDIT SNAPSHOT ===================== */
+function auditSnapshot(extra={}){
+  const ts = new Date().toISOString().replace(/T/, ' ').replace(/\..*/, '');
+  const entry = { ts, rhythm: STATE.rhythm, bpm: STATE.bpm, noisePct: STATE.noisePct,
+                  macroF1: STATE.macroF1, ci: STATE.ci, audio: STATE.audioEnabled, ...extra };
+  const log = $("snapLog");
+  const div = document.createElement("div");
+  div.className = "entry";
+  div.innerHTML = `<span class="ts">[${ts}]</span><span class="msg">snapshot: rhythm=${STATE.rhythm} bpm=${STATE.bpm} noise=${STATE.noisePct}% macroF1=${STATE.macroF1?STATE.macroF1.toFixed(3):"—"}</span>`;
+  log.insertBefore(div, log.firstChild);
+  if(log.children.length > 50) log.removeChild(log.lastChild);
+  playConfirmationTone(1100, 0.1);
+  // if bridge connected, send to server
+  if(STATE.ws && STATE.ws.readyState === WebSocket.OPEN){
+    STATE.ws.send(JSON.stringify({type:"snapshot", ts, ...entry}));
+  }
+  return entry;
+}
+
+/* ===================== WEBSOCKET / BRIDGE ===================== */
+function connectWs(){
+  const proto = window.location.protocol === "https:" ? "wss:" : "ws:";
+  const host = window.location.hostname || "127.0.0.1";
+  const port = window.location.port || "8765";
+  const url = `${proto}//${host}:${port}/ws/telemetry`;
+  try{
+    STATE.ws = new WebSocket(url);
+    STATE.ws.onopen = ()=>{
+      STATE.bridgeConnected = true;
+      $("bridgeStatusDot").className = "w-2 h-2 rounded-full bg-aether-ok";
+      $("bridgeStatusText").textContent = "LIVE — FastAPI bridge connected";
+      $("bridgeStatusText").className = "mono text-xs text-aether-ok";
+      playConfirmationTone(1200, 0.1);
+      // request initial telemetry
+      fetchTelemetry();
+    };
+    STATE.ws.onclose = ()=>{
+      STATE.bridgeConnected = false;
+      setBridgeDemo();
+      setTimeout(connectWs, 1500);
+    };
+    STATE.ws.onerror = ()=>{ STATE.ws.close(); };
+    STATE.ws.onmessage = (ev)=>{
+      try{ handleWsMsg(JSON.parse(ev.data)); } catch(e){ }
+    };
+  } catch(e){
+    setBridgeDemo();
+    setTimeout(connectWs, 1500);
+  }
+}
+function setBridgeDemo(){
+  STATE.bridgeConnected = false;
+  $("bridgeStatusDot").className = "w-2 h-2 rounded-full bg-aether-warning";
+  $("bridgeStatusText").textContent = "DEMO MODE — Python bridge not running";
+  $("bridgeStatusText").className = "mono text-xs text-aether-warning";
+}
+function fetchTelemetry(){
+  const host = window.location.hostname || "127.0.0.1";
+  const port = window.location.port || "8765";
+  fetch(`http://${host}:${port}/telemetry`)
+    .then(r=>r.json()).then(d=>{
+      $("cpuThreads").textContent = d.logical_cpu_threads ?? "—";
+      $("platformReadout").textContent = d.os_platform ?? "—";
+      $("gpuRenderer").textContent = d.gpu_renderer ?? "—";
+    }).catch(()=>{}); // silent if no bridge
+}
+function fetchCrosswalk(){
+  const host = window.location.hostname || "127.0.0.1";
+  const port = window.location.port || "8765";
+  fetch(`http://${host}:${port}/crosswalk`)
+    .then(r=>r.json()).then(d=>{
+      const rows = d && d.rows;
+      if(!Array.isArray(rows) || rows.length===0) return;
+      const cohortSources = {
+        ptb_xl_within: ["ptb_xl"],
+        cpsc_2018_external: ["cpsc_2018"],
+        chapman_shaoxing_external: ["chapman_shaoxing"],
+        lopgo_ensemble: ["ptb_xl","cpsc_2018","chapman_shaoxing"],
+      };
+      const sources = cohortSources[STATE.cohort] || [STATE.cohort];
+      const masked = new Set();
+      CANONICAL_CLASSES.forEach(c=>{
+        const evalable = sources.some(db=>{
+          const rs = rows.filter(r=>r.source_database===db && r.canonical_class===c);
+          return rs.some(r=>r.mapping_tier==="primary" && r.inclusion_status==="included");
+        });
+        if(!evalable) masked.add(c);
+      });
+      const maskedArr = [...masked];
+      CANONICAL_CLASSES.forEach(c=>{ STATE.posterior[c].mask = maskedArr.includes(c) ? 0 : 1; });
+      renderPosterior();
+    }).catch(()=>{}); // keep embedded fallback on failure
+}
+function handleWsMsg(msg){
+  if(msg.type === "telemetry"){
+    $("cpuThreads").textContent = msg.logical_cpu_threads ?? "—";
+    $("platformReadout").textContent = msg.os_platform ?? "—";
+    $("gpuRenderer").textContent = msg.gpu_renderer ?? "—";
+  } else if(msg.type === "gradcam"){
+    STATE.saliencyBands = msg.grad_cam_bands || msg.bands || [];
+    if(msg.probabilities){
+      CANONICAL_CLASSES.forEach(c=>{
+        const pval = msg.probabilities[c];
+        if(pval !== undefined) STATE.posterior[c].p = pval;
+      });
+      renderPosterior();
+    }
+  } else if(msg.type === "eval"){
+    STATE.macroF1 = msg.macro_f1;
+    STATE.ci = msg.ci ?? [null,null];
+    renderPosterior();
+  } else if(msg.type === "posterior"){
+    // server-provided posterior probabilities + per-class eval_mask
+    if(msg.probabilities){
+      CANONICAL_CLASSES.forEach(c=>{
+        const pval = msg.probabilities[c];
+        if(pval !== undefined){
+          STATE.posterior[c].p = pval;
+          STATE.posterior[c].mask = (msg.eval_mask && msg.eval_mask[c] !== undefined) ? (msg.eval_mask[c] === 1 ? 1 : 0) : ((msg.mask === undefined) ? 1 : msg.mask);
+        }
+      });
+    } else {
+      CANONICAL_CLASSES.forEach(c=>{
+        if(msg[c] !== undefined){
+          STATE.posterior[c].p = msg[c];
+          STATE.posterior[c].mask = msg.mask === undefined ? 1 : msg.mask;
+        }
+      });
+    }
+    renderPosterior();
+  }
+}
+
+/* ===================== TAB SWITCHING ===================== */
+function switchTab(tab){
+  document.querySelectorAll(".tab-panel").forEach(p=>{ p.classList.add("hidden"); });
+  document.querySelectorAll(".tab-btn").forEach(b=>{ b.classList.remove("active"); });
+  $(`tab-${tab}`).classList.remove("hidden");
+  document.querySelector(`[data-tab="${tab}"]`).classList.add("active");
+  if(tab === "oscilloscope"){ resizeCanvas(); startRenderLoop(); }
+  if(tab === "onion") initOnion();
+  if(tab === "probe") initProbe();
+}
+
+/* ===================== TAB 2: ONION TOPOLOGY ===================== */
+function initOnion(){
+  const svg = onionSvg;
+  const w = 800, h = 500;
+  STATE.nodes = [
+    {id:"client", label:"Client (127.0.0.1:9050)", cx:120, cy:250, type:"client"},
+    {id:"hop1", label:"Hop #1 Entry Guard", cx:260, cy:120, type:"guard"},
+    {id:"hop2", label:"Hop #2 Middle Relay", cx:400, cy:180, type:"middle"},
+    {id:"hop3", label:"Hop #3 Rendezvous Point", cx:540, cy:140, type:"rendezvous"},
+    {id:"hop4", label:"Hop #4 Service Intro Point", cx:680, cy:250, type:"intro"},
+    {id:"hop5", label:"Hop #5 Onion Guard", cx:540, cy:360, type:"guard"},
+    {id:"hop6", label:"Hop #6 v3 Hidden Service", cx:400, cy:420, type:"hs"},
+  ];
+  const edges = [
+    ["client","hop1"],["hop1","hop2"],["hop2","hop3"],["hop3","hop4"],["hop4","hop5"],["hop5","hop6"]
+  ];
+  svg.innerHTML = "";
+  // draw edges
+  edges.forEach(([a,b])=>{
+    const na = STATE.nodes.find(n=>n.id===a);
+    const nb = STATE.nodes.find(n=>n.id===b);
+    const line = document.createElementNS("http://www.w3.org/2000/svg","line");
+    line.setAttribute("x1", na.cx); line.setAttribute("y1", na.cy);
+    line.setAttribute("x2", nb.cx); line.setAttribute("y2", nb.cy);
+    line.setAttribute("class","relay-line");
+    line.setAttribute("id","edge_"+a+"_"+b);
+    svg.appendChild(line);
+  });
+  // draw nodes
+  STATE.nodes.forEach(n=>{
+    const g = document.createElementNS("http://www.w3.org/2000/svg","g");
+    g.setAttribute("class","node");
+    g.setAttribute("transform",`translate(${n.cx},${n.cy})`);
+    g.setAttribute("onclick","selectOnionNode('"+n.id+"')");
+    const circle = document.createElementNS("http://www.w3.org/2000/svg","circle");
+    circle.setAttribute("r",7); circle.setAttribute("fill","#334155"); circle.setAttribute("stroke","#64748b"); circle.setAttribute("stroke-width","1.5");
+    g.appendChild(circle);
+    const text = document.createElementNS("http://www.w3.org/2000/svg","text");
+    text.setAttribute("x",0); text.setAttribute("y",-12); text.setAttribute("text-anchor","middle");
+    text.setAttribute("fill","#94a3b8"); text.setAttribute("font-size","11"); text.setAttribute("font-family","'JetBrains Mono',monospace");
+    text.textContent = n.label.split(" ")[0];
+    g.appendChild(text);
+    svg.appendChild(g);
+    n._group = g; n._circle = circle;
+  });
+  STATE.activeNode = null;
+  $("circuitId").textContent = "circuit: v3-" + Math.random().toString(36).slice(2,8);
+  renderInspector(null);
+  $("onionTraceLog").innerHTML = "<div class='entry'><span class='ts'>—</span><span class='msg'>Circuit initialized. Select a relay to inspect.</span></div>";
+}
+function selectOnionNode(id){
+  const n = STATE.nodes.find(x=>x.id===id);
+  STATE.activeNode = n;
+  STATE.nodes.forEach(x=>{
+    x._circle.setAttribute("fill", x.id===id ? "#ef4444" : "#334155");
+    x._circle.setAttribute("stroke", x.id===id ? "#ffffff" : "#64748b");
+  });
+  // highlight edges connected
+  document.querySelectorAll(".relay-line").forEach(l=>{ l.classList.remove("active"); });
+  renderInspector(n);
+  logOnionTrace(`inspected node "${n.label}"`);
+}
+function renderInspector(n){
+  const ins = $("relayInspector");
+  if(!n){
+    ins.innerHTML = "<div class='text-center py-4 text-aether-muted text-xs'>Select a relay node on the mesh to inspect its cryptographic descriptor.</div>";
+    return;
+  }
+  const desc = {
+    client:{asn:"—", loc:"127.0.0.1 (localhost)", latency:"—", descr:"Local Tor SOCKS port 9050"},
+    hop1:{asn:"AS13335", loc:"Frankfurt, DE", latency:"12 ms", descr:"Ed25519 blinded identity key; ChaCha20-Poly1305 relay cell"},
+    hop2:{asn:"AS15169", loc:"Mountain View, US", latency:"24 ms", descr:"RSA-1024 legacy + Ed25519 ntor handshake"},
+    hop3:{asn:"AS32934", loc:"Toronto, CA", latency:"31 ms", descr:"Rendezvous Point; blinded v3 HSDir descriptor"},
+    hop4:{asn:"AS8075", loc:"Paris, FR", latency:"28 ms", descr:"Service Introduction Point; one-time introduction circuit"},
+    hop5:{asn:"AS13335", loc:"Amsterdam, NL", latency:"15 ms", descr:"Onion Guard; entry authentication for hidden service"},
+    hop6:{asn:"AS20940", loc:"— (onion service)", latency:"—", descr:"v3 Hidden Service; .onion address (56-char base32)"},
+  }[n.id];
+  ins.innerHTML = `
+    <div class="text-xs font-bold text-aether-accent mb-1">${n.label}</div>
+    <div class="space-y-1 text-xs text-aether-muted">
+      <div><span class="text-aether-text">ASN:</span> <span class="mono">${desc.asn}</span></div>
+      <div><span class="text-aether-text">Location:</span> ${desc.loc}</div>
+      <div><span class="text-aether-text">Hop Latency:</span> ${desc.latency}</div>
+      <div><span class="text-aether-text">Descriptor:</span></div>
+      <div class="mono text-[10px] text-aether-text mt-1 break-all">${desc.descr}</div>
+    </div>
+    <div class="mt-3 pt-2 border-t border-aether-border/50">
+      <button class="btn w-full text-[11px]" onclick="sendToNode('${n.id}')">Send Relay Cell to This Node</button>
+    </div>
+  `;
+}
+function sendToNode(id){
+  logOnionTrace(`relay cell dispatched to "${id}"`);
+  playConfirmationTone(1000, 0.08);
+}
+function sendOnionPacket(){
+  let step = 0;
+  const path = STATE.nodes.map(n=>n.id);
+  function animate(){
+    if(step >= path.length){
+      logOnionTrace("packet reached v3 Hidden Service — completion chime");
+      playConfirmationTone(1320, 0.2);
+      return;
+    }
+    const id = path[step];
+    // highlight edges up to this step
+    for(let i=0;i<step;i++){
+      const el = document.getElementById(`edge_${path[i]}_${path[i+1]}`);
+      if(el) el.classList.add("active");
+    }
+    selectOnionNode(id);
+    logOnionTrace(`hop ${step+1}/6: ${id}`);
+    step++;
+    setTimeout(animate, 500);
+  }
+  animate();
+  playConfirmationTone(900, 0.08);
+}
+function rotateGuardCircuit(){
+  STATE.nodes = STATE.nodes.map(n=>({...n, cx: n.cx + (Math.random()-0.5)*40, cy: n.cy + (Math.random()-0.5)*40}));
+  initOnion();
+  logOnionTrace("Guard & HSDir rotated — dynamic topology recalculated");
+  playConfirmationTone(700, 0.1);
+}
+function logOnionTrace(msg){
+  const log = $("onionTraceLog");
+  const ts = new Date().toISOString().replace(/T/, ' ').replace(/\..*/, '');
+  const div = document.createElement("div");
+  div.className = "entry";
+  div.innerHTML = `<span class="ts">[${ts}]</span><span class="msg">${msg}</span>`;
+  log.insertBefore(div, log.firstChild);
+  if(log.children.length > 30) log.removeChild(log.lastChild);
+}
+
+/* ===================== TAB 3: PROBE ===================== */
+function initProbe(){
+  const bench = $("probeBench");
+  bench.innerHTML = `
+    <div><span class="text-aether-muted">CPU threads:</span> <span id="pbCpu" class="mono">probing…</span></div>
+    <div><span class="text-aether-muted">Memory (est.):</span> <span id="pbMem" class="mono">probing…</span></div>
+    <div><span class="text-aether-muted">Screen:</span> <span id="pbScreen" class="mono">probing…</span></div>
+    <div><span class="text-aether-muted">Pixel ratio:</span> <span id="pbPixel" class="mono">probing…</span></div>
+    <div><span class="text-aether-muted">Timezone:</span> <span id="pbTz" class="mono">probing…</span></div>
+    <div><span class="text-aether-muted">WebGL GPU:</span> <span id="pbGpu" class="mono">probing…</span></div>
+  `;
+  try{
+    const canvas = document.createElement("canvas");
+    const gl = canvas.getContext("webgl2") || canvas.getContext("experimental-webgl2");
+    const dbg = gl.getExtension("WEBGL_debug_renderer_info");
+    const renderer = dbg ? gl.getParameter(dbg.UNMASKED_RENDERER_WEBGL) : (gl ? "WebGL2 (masked)" : "none");
+    $("pbGpu").textContent = renderer;
+  } catch(e){ $("pbGpu").textContent = "unavailable"; }
+  $("pbCpu").textContent = navigator.hardwareConcurrency ?? "—";
+  $("pbMem").textContent = (navigator.deviceMemory ?? "—") + " GB";
+  $("pbScreen").textContent = screen.width + "×" + screen.height;
+  $("pbPixel").textContent = window.devicePixelRatio ?? "—";
+  $("pbTz").textContent = Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
+function runCpuStressTest(){
+  const res = $("stressResult");
+  res.textContent = "running…";
+  const t0 = performance.now();
+  let acc = 0;
+  const N = 2500000;
+  for(let i=0;i<N;i++){
+    acc += Math.sin(i) * Math.cos(i) + Math.sqrt(i+1);
+  }
+  const t1 = performance.now();
+  res.textContent = `completed ${N} ops in ${(t1-t0).toFixed(1)} ms (acc=${acc.toFixed(2)})`;
+  playConfirmationTone(1200, 0.1);
+}
+function copyPsAudit(){
+  const txt = $("psOneLiner").textContent;
+  navigator.clipboard.writeText(txt).then(()=>{
+    playConfirmationTone(1000, 0.08);
+    const old = $("psOneLiner").textContent;
+  });
+}
+function appendSnapshotFromAudit(){
+  auditSnapshot({source:"powershell_audit"});
+}
+
+/* ===================== INIT ===================== */
+function init(){
+  // populate cohort select
+  const sel = $("cohortSelect");
+  const cohorts = [
+    {id:"ptb_xl_within", name:"PTB-XL (Within-DB)"},
+    {id:"cpsc_2018_external", name:"CPSC 2018 (External)"},
+    {id:"chapman_shaoxing_external", name:"Chapman-Shaoxing (External)"},
+    {id:"lopgo_ensemble", name:"LOPGO Multi-Source Ensemble"},
+  ];
+  cohorts.forEach(c=>{
+    const o = document.createElement("option");
+    o.value = c.id; o.textContent = c.name; sel.appendChild(o);
+  });
+  sel.value = STATE.cohort;
+  sel.addEventListener("change", (e)=>{
+    STATE.cohort = e.target.value;
+    setCohortMasks();
+    playConfirmationTone(800, 0.08);
+  });
+  setCohortMasks();
+  // live refresh of crosswalk-derived eval masks (falls back to embedded table)
+  fetchCrosswalk();
+
+  // audio toggle
+  $("audioToggle").addEventListener("click", ()=>{
+    initAudio();
+    setAudioEnabled(!STATE.audioEnabled);
+  });
+  // gradcam toggle
+  $("gradcamToggle").addEventListener("click", ()=>{
+    STATE.gradCamEnabled = !STATE.gradCamEnabled;
+    $("gradcamToggle").textContent = STATE.gradCamEnabled ? "On" : "Off";
+    $("gradcamToggle").className = STATE.gradCamEnabled ? "btn primary" : "btn";
+    saliencySvg.style.display = STATE.gradCamEnabled ? "block" : "none";
+    if(STATE.gradCamEnabled){
+      try{ STATE.ws.send(JSON.stringify({request:"predict", rhythm: STATE.rhythm, noisePct: STATE.noisePct, cohort: STATE.cohort})); }catch(e){}
+    }
+    playConfirmationTone(STATE.gradCamEnabled ? 900 : 600, 0.08);
+  });
+  // noise slider
+  $("noiseSlider").addEventListener("input", (e)=> setNoisePct(e.target.value));
+  // freeze btn
+  $("freezeBtn").addEventListener("click", toggleFreeze);
+  // snapshot btn
+  $("snapshotBtn").addEventListener("click", ()=> auditSnapshot());
+
+  // init posterior
+  updatePosteriorFromRhythm();
+  // canvas
+  resizeCanvas();
+  startRenderLoop();
+  if(window.ResizeObserver){ new ResizeObserver(()=>resizeCanvas()).observe($("canvasContainer")); }
+  // standalone hardware telemetry (browser-side; live bridge overrides when up)
+  $("cpuThreads").textContent = navigator.hardwareConcurrency ?? "—";
+  try{
+    const c2 = document.createElement("canvas");
+    const gl2 = c2.getContext("webgl2") || c2.getContext("experimental-webgl2");
+    const d2 = gl2 ? gl2.getExtension("WEBGL_debug_renderer_info") : null;
+    const r2 = d2 ? gl2.getParameter(d2.UNMASKED_RENDERER_WEBGL) : (gl2 ? "WebGL2 (masked)" : "none");
+    $("gpuRenderer").textContent = r2;
+  } catch(e){ $("gpuRenderer").textContent = "unavailable"; }
+  $("platformReadout").textContent = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "—";
+  // probe
+  initProbe();
+  // websocket (demo mode first, then try bridge)
+  setBridgeDemo();
+  connectWs();
+}
+
+document.addEventListener("DOMContentLoaded", init);
+</script>
+</body>
+</html>

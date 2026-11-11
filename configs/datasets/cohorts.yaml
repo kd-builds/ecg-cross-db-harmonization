@@ -1,0 +1,32 @@
+# Candidate 12-lead ECG databases from PhysioNet/CinC 2021 resources
+standardization:
+  canonical_leads: ["I", "II", "III", "aVR", "aVL", "aVF", "V1", "V2", "V3", "V4", "V5", "V6"]
+  target_sampling_rate_hz: 500
+  window_seconds: 10.0
+  amplitude_unit: "mV"
+  padding_strategy: "zero_pad_with_mask"
+
+cohorts:
+  cpsc_2018:
+    name: "CPSC 2018 (China Physiological Signal Challenge)"
+    provenance_group: "cpsc_group"
+    raw_dir: "data/raw/cpsc_2018"
+    native_sampling_rate_hz: 500
+    has_patient_id: true
+    annotation_level: "record"
+
+  ptb_xl:
+    name: "PTB-XL Electrocardiography Database"
+    provenance_group: "ptb_group"
+    raw_dir: "data/raw/ptb_xl"
+    native_sampling_rate_hz: 500
+    has_patient_id: true
+    annotation_level: "record"
+
+  chapman_shaoxing:
+    name: "Chapman-Shaoxing 12-Lead ECG Database"
+    provenance_group: "chapman_shaoxing_group"
+    raw_dir: "data/raw/chapman_shaoxing"
+    native_sampling_rate_hz: 500
+    has_patient_id: true
+    annotation_level: "record"

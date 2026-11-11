@@ -1,0 +1,59 @@
+# AETHER // Real-Time ECG Neural & Network Telemetry Deck
+# Configuration for the interactive visual studio & local diagnostic dashboard.
+# Mirrors the signal standardization in configs/datasets/cohorts.yaml.
+
+deck:
+  name: "AETHER Telemetry Deck"
+  version: "1.0.0"
+  sample_rate_hz: 500
+  window_seconds: 10.0
+  amplitude_unit: "mV"
+  canonical_leads: ["I", "II", "III", "aVR", "aVL", "aVF", "V1", "V2", "V3", "V4", "V5", "V6"]
+  display_leads: ["I", "II", "V1", "V5"]
+  grid:
+    speed_mm_per_s: 25      # 1 large box = 0.2 s
+    gain_mm_per_mv: 10      # 1 mV = 10 mm
+  canvas:
+    fps_target: 60
+    sim_fps: 500            # internal fixed-time-step simulation Hz
+
+audio:
+  enabled_by_default: false
+  qrs_pip_freq_hz: 1000.0
+  qrs_pip_ms: 80
+  af_fwave_hum_hz: [5.5, 6.2]
+  confirmation_tone_freq_hz: 880.0
+
+noise:
+  baseline_wander_hz: [0.1, 0.3, 0.5]
+  emg_band_hz: [20, 250]
+  default_percent: 15
+
+cohorts:
+  - id: ptb_xl_within
+    name: "PTB-XL (Within-DB)"
+    provenance_group: "ptb_group"
+    mask_classes: []
+  - id: cpsc_2018_external
+    name: "CPSC 2018 (External)"
+    provenance_group: "cpsc_group"
+    mask_classes: ["IAVB"]
+  - id: chapman_shaoxing_external
+    name: "Chapman-Shaoxing (External)"
+    provenance_group: "chapman_shaoxing_group"
+    mask_classes: ["AF", "IAVB"]
+  - id: lopgo_ensemble
+    name: "LOPGO Multi-Source Ensemble"
+    provenance_group: "lopgo"
+    mask_classes: []
+
+bridge:
+  host: "127.0.0.1"
+  port: 8765
+  ws_path: "/ws/telemetry"
+  reconnect_interval_ms: 1500
+
+grad_cam:
+  enabled: false
+  saliency_color: "rgba(255, 60, 60, 0.45)"
+  target_layers: ["features.2", "layer3"]

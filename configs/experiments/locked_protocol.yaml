@@ -1,0 +1,27 @@
+# Locked Evaluation Protocol (Sections 6 & 7 of Research Proposal)
+experiment_name: "cross_db_harmonized_benchmark_v1"
+allow_target_labels_in_transfer: false
+allow_target_driven_tuning: false
+
+partitioning:
+  train_ratio: 0.70
+  val_ratio: 0.15
+  internal_test_ratio: 0.15
+  enforce_patient_disjoint: true
+  enforce_provenance_disjoint: true
+
+evaluation:
+  primary_metric: "macro_f1"
+  secondary_metrics:
+    - "per_class_precision"
+    - "per_class_recall"
+    - "per_class_f1"
+    - "macro_auprc"
+    - "auroc"
+    - "expected_calibration_error"
+  missing_outcome_label: "not estimable"
+  bootstrap:
+    enabled: true
+    cluster_by: "patient_id"
+    n_resamples: 1000
+    confidence_level: 0.95

@@ -1,0 +1,30 @@
+# Matched Deep Learning Baselines (Section 6 of Research Proposal)
+random_seeds: [42, 1337, 2026]
+
+tuning_budget:
+  max_trials_per_model: 20
+  selection_metric: "source_val_macro_f1"
+  threshold_tuning_scope: "source_validation_only"
+  calibration_scope: "source_validation_only"
+
+models:
+  compact_1d_cnn:
+    architecture: "CompactCNN1D"
+    in_channels: 12
+    conv_channels: [32, 64, 128, 128]
+    kernel_sizes: [7, 5, 5, 3]
+    dropout: 0.2
+    learning_rate: 0.001
+    batch_size: 64
+    max_epochs: 50
+
+  residual_1d_cnn:
+    architecture: "ResNet1D"
+    in_channels: 12
+    base_filters: 64
+    num_blocks: [2, 2, 2, 2]
+    kernel_size: 7
+    dropout: 0.2
+    learning_rate: 0.001
+    batch_size: 64
+    max_epochs: 50

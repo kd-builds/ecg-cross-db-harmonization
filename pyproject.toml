@@ -1,0 +1,25 @@
+[build-system]
+requires = ["setuptools>=65.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "ecg_xval"
+version = "0.1.0"
+description = "Cross-Database Evaluation of Deep Learning for ECG Arrhythmia Classification Using Harmonized Labels"
+authors = [
+    { name = "Riddhi Bhagat", email = "riddhi.bhagat@smit.smu.edu.in" }
+]
+readme = "README.md"
+requires-python = ">=3.10"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-v --tb=short"
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"

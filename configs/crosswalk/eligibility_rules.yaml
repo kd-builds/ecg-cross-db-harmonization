@@ -1,0 +1,12 @@
+# Eligibility and Masking Rules (Section 5 of Research Proposal)
+protocol_version: "1.0.0-locked"
+freeze_before_external_test: true
+
+rules:
+  require_12_leads: true
+  disallow_beat_level_mixing: true
+  min_positive_support_per_cohort: 50
+  missing_diagnosis_policy: "mask_unless_protocol_confirms_negative"
+  uncertain_label_policy: "mask_from_class_evaluation"
+  unmappable_label_policy: "exclude_from_primary_set"
+  normal_sinus_rhythm_role: "comparator_not_arrhythmia"
