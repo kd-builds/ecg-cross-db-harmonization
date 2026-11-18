@@ -1,16 +1,59 @@
 # Cross-Database Evaluation of Deep Learning for ECG Arrhythmia Classification Using Harmonized Labels
 
-**Author:** Riddhi Bhagat  
+**Author:** BISHESH KUMAR DAS  
 **Institution:** Sikkim Manipal Institute of Technology  
 **Proposal Date:** 5 October 2026  
 
+## Current status: prototype demo
+
+![AETHER Telemetry Deck - overview](docs/screenshots/WhatsApp Image 2026-11-19 at 01.58.29.jpeg)
+![AETHER Telemetry Deck - rhythm panel](docs/screenshots/WhatsApp Image 2026-11-19 at 01.59.29.jpeg)
+![AETHER Telemetry Deck - 12lead](docs/screenshots/WhatsApp Image 2026-11-19 at 01.59.46.jpeg)
+
+The AETHER Telemetry Deck runs locally: `python scripts/05_launch_aether_deck.py`, then open http://127.0.0.1:8765.
+These screenshots show the UI prototype. This demo is not verified trained-model inference: the training pipeline is still under repair, so any predictions or scores shown are demo values, not validated accuracy or medical results.
+
 ---
+
+## How to Run
+
+### Installation
+
+The project declares Python >= 3.10 (from `pyproject.toml`) and its dependencies in `requirements.txt`.
+
+```powershell
+cd ecg-cross-db-harmonization
+python -m venv .venv
+.venv\Scripts\activate
+pip install -r requirements.txt
+pip install -e .
+```
+
+### Research Pipeline Entry Points
+
+The following scripts are runnable CLI entry points defined with `argparse` in `scripts/`:
+
+| Script | Command | Status | Notes |
+|---|---|---|---|
+| **Dataset Audit** | `python scripts/01_run_dataset_audit.py` | tested | Loads cohort config from `configs/datasets/cohorts.yaml`; lists 3 candidate databases (PTB-XL, CPSC 2018, Chapman-Shaoxing). |
+| **Harmonize & Split** | `python scripts/02_harmonize_and_split.py` | tested | Loads primary crosswalk from `configs/crosswalk/label_crosswalk_v1.csv`; outputs canonical classes [`AF`, `IAVB`, `NSR`, `SBRAD`, `STACH`]. |
+| **Train Baselines** | `python scripts/03_train_baselines.py` | tested | Uses `--config configs/experiments/locked_protocol.yaml` and `--seed` (default: 42). |
+| **Transfer Evaluation** | `python scripts/04_evaluate_transfer.py` | tested | Verifies locked protocol: asserts `allow_target_labels_in_transfer` and `allow_target_driven_tuning` are `False`. |
+| **Aether Deck Bridge** | `python scripts/05_launch_aether_deck.py` | inspected, not tested | Launches FastAPI + WebSocket bridge at `http://127.0.0.1:8765`. Falls back to seed-42 initialized models and synthetic windows when no checkpoint exists. See dashboard section for details. |
+
+### Dashboard (AETHER Telemetry Deck)
+
+- **FastAPI bridge**: `python scripts/05_launch_aether_deck.py` serves `dashboard/aether_deck.html` at `http://127.0.0.1:8765`
+- Endpoints: `GET /`, `GET /telemetry`, `GET /crosswalk`, `GET /eval`, `POST /model/{architecture}/predict`
+- Falls back to seed-42 model initialization and synthetic ECGs when no checkpoint is present in `models/`
+
+--- 
 
 ## 1. Project Title, Author & Overview
 
 **Title:** Cross-Database Evaluation of Deep Learning for ECG Arrhythmia Classification Using Harmonized Labels
 
-**Author:** Riddhi Bhagat — Sikkim Manipal Institute of Technology
+**Author:** BISHESH KUMAR DAS — Sikkim Manipal Institute of Technology
 
 ### Overview
 
@@ -186,6 +229,33 @@ python scripts\05_launch_aether_deck.py
 ```powershell
 pytest
 ```
+
+---
+
+## Status / Roadmap
+
+### Verified (tested)
+
+- `python scripts/01_run_dataset_audit.py` — loads audit configuration for 3 candidate cohorts (PTB-XL, CPSC 2018, Chapman-Shaoxing); SHA-256 duplicate hashing and provenance grouping confirmed working.
+- `python scripts/02_harmonize_and_split.py` — loads primary label crosswalk with 5 canonical rhythm classes (`AF`, `IAVB`, `NSR`, `SBRAD`, `STACH`); crosswalk eligibility rules applied correctly.
+- `python scripts/03_train_baselines.py` — initializes baseline training experiment `cross_db_harmonized_benchmark_v1` with seed=42; CompactCNN1D and ResNet1D model paths resolved from `configs/experiments/locked_protocol.yaml`.
+- `python scripts/04_evaluate_transfer.py` — verifies locked external evaluation protocol: asserts `allow_target_labels_in_transfer` and `allow_target_driven_tuning` are `False`.
+- `pip install -e .` — installs ecg_xval package in editable mode from `src/ecg_xval/`.
+- `pip install -r requirements.txt` — installs all declared scientific, visualization, and testing dependencies for Python >= 3.10.
+
+### Inspected, not tested (runtime behavior confirmed from code review)
+
+- `python scripts/05_launch_aether_deck.py` — FastAPI + WebSocket bridge launches at `http://127.0.0.1:8765`; model bundles (`CompactCNN1D`, `ResNet1D`) fall back to `lock_random_seed(42)` initialization when no checkpoint exists in `models/`; Grad-CAM hook machinery and synthetic window generation (`_synthetic_window`) inspected from code.
+- Full end-to-end pipeline (audit → harmonize → preprocess → train → evaluate) has not been run to completion; individual scripts verified in isolation.
+- No trained checkpoints exist in `models/` directory; dashboard evaluation fallback to untrained weights is explicit in the code.
+
+### Still in Progress
+
+- End-to-end benchmark execution: running the full pipeline from dataset audit through locked external evaluation and generating transferability results.
+- External dataset transfer evaluation with held-out databases; bootstrap confidence interval generation for Macro-F1, AUPRC, AUROC.
+- AETHER deck live-inference integration with real patient data and Grad-CAM saliency in production workflow.
+- Sensitivity/error analysis across the 5 canonical rhythm classes using the harmonized label taxonomy.
+- Manuscript preparation and reproducibility package assembly (Weeks 15–16).
 
 ---
 
