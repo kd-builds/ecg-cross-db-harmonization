@@ -6,9 +6,9 @@
 
 ## Current status: prototype demo
 
-![AETHER Telemetry Deck - overview](docs/screenshots/WhatsApp Image 2026-11-19 at 01.58.29.jpeg)
-![AETHER Telemetry Deck - rhythm panel](docs/screenshots/WhatsApp Image 2026-11-19 at 01.59.29.jpeg)
-![AETHER Telemetry Deck - 12lead](docs/screenshots/WhatsApp Image 2026-11-19 at 01.59.46.jpeg)
+![AETHER Telemetry Deck - overview](docs/screenshots/WhatsApp%20Image%202026-11-19%20at%2001.58.29.jpeg)
+![AETHER Telemetry Deck - rhythm panel](docs/screenshots/WhatsApp%20Image%202026-11-19%20at%2001.59.29.jpeg)
+![AETHER Telemetry Deck - 12lead](docs/screenshots/WhatsApp%20Image%202026-11-19%20at%2001.59.46.jpeg)
 
 The AETHER Telemetry Deck runs locally: `python scripts/05_launch_aether_deck.py`, then open http://127.0.0.1:8765.
 These screenshots show the UI prototype. This demo is not verified trained-model inference: the training pipeline is still under repair, so any predictions or scores shown are demo values, not validated accuracy or medical results.
